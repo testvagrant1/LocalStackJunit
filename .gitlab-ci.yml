@@ -1,0 +1,29 @@
+stages:
+  - before_script
+  - test
+
+before_script:
+  - 'which ssh-agent || ( apt-get install -qq openssh-client )'
+  - 'cd ..'
+  - 'mv localstack/load_balancer_ec2_demo sample.pem'
+  - 'chmod 400 sample.pem'
+
+after_script:
+  - echo 'script executed successfully'
+
+test:
+  stage: test
+  script:
+    - >
+      ssh -o StrictHostKeyChecking=no -i sample.pem ubuntu@ec2-13-233-81-197.ap-south-1.compute.amazonaws.com
+      'rm -rf localstack | true && exit'
+    - 'scp -r -o StrictHostKeyChecking=no -i sample.pem localstack ubuntu@ec2-13-233-81-197.ap-south-1.compute.amazonaws.com:'
+    - >
+      ssh -o StrictHostKeyChecking=no -i sample.pem ubuntu@ec2-13-233-81-197.ap-south-1.compute.amazonaws.com
+      'cd localstack && aws configure set aws_access_key_id AKIAIOSFODNN7EXAMPLE &&
+       aws configure set aws_secret_access_key wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY &&
+       aws configure set default.region us-west-2 &&
+       sudo mvn clean install && sudo mvn test && exit'
+
+
+
